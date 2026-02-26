@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Green Campus - Register</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { min-height: 100vh; background: radial-gradient(circle at 75% 45%, #128564 0%, #031f1a 100%); color: #fff; display: flex; align-items: center; justify-content: center; }
+        .register-card { background: rgba(255, 255, 255, 0.1); padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; backdrop-filter: blur(10px); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; }
+        .btn { background: #10b981; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        a { color: #10b981; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="register-card">
+        <h2>Create Account</h2>
+        <p style="opacity: 0.7; margin-bottom: 20px;">Join the sustainability mission</p>
+        <input type="text" id="regUser" placeholder="Username">
+        <input type="email" id="regEmail" placeholder="Email">
+        <input type="password" id="regPass" placeholder="Password">
+        <button class="btn" onclick="register()">Create Account</button>
+        <p style="margin-top: 20px; text-align: center;">
+            Already have an account? <a href="login.html">Login</a>
+        </p>
+    </div>
+
+    <script>
+        async function register() {
+            const user = document.getElementById('regUser').value;
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPass').value;
+
+            if (!user || !email || !pass) {
+                alert("Please fill all fields");
+                return;
+            }
+
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, email: email, password: pass })
+            });
+
+            if (response.ok) {
+                alert("Registration successful! Please login.");
+                window.location.href = 'login.html';
+            } else {
+                const err = await response.json();
+                alert(err.message || "Registration failed");
+            }
+        }
+    </script>
+</body>
+</html>

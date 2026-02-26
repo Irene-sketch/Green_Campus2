@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sustainability Tracker - Resource Management</title>
+    <style>
+        /* ... existing styles ... */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { min-height: 100vh; background: radial-gradient(circle at 75% 45%, #128564 0%, #031f1a 100%); color: #f1f5f9; padding: 20px; }
+        .card { background: rgba(255, 255, 255, 0.08); padding: 30px; border-radius: 20px; margin: 20px auto; max-width: 800px; }
+        .form-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .form-group { flex: 1; }
+        label { display: block; margin-bottom: 8px; font-size: 14px; opacity: 0.8; }
+        select, input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; }
+        .btn { background: #10b981; color: white; border: none; padding: 12px 30px; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        
+        /* New Button Layout */
+        .nav-container { display: flex; justify-content: space-between; max-width: 800px; margin: 20px auto; align-items: center; }
+        .back-btn { color: #fff; text-decoration: none; opacity: 0.8; font-weight: 500; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .logout-btn:hover { background-color: #dc2626; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center">Log Resource Consumption</h1>
+    
+    <div class="card">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Resource Type</label>
+                <select id="resType"><option value="electricity">Electricity</option><option value="water">Water</option></select>
+            </div>
+            <div class="form-group">
+                <label>Building</label>
+                <select id="building"><option>Main Block</option><option>Civil Block</option></select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Value</label><input type="number" id="qty"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="date"></div>
+        </div>
+        <button class="btn" onclick="submitData()">Submit Data</button>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead><tr><th>DATE</th><th>TYPE</th><th>VALUE</th></tr></thead>
+            <tbody id="logTable"></tbody>
+        </table>
+    </div>
+
+    <div class="nav-container">
+        <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+        <button onclick="logout()" class="logout-btn">Logout</button>
+    </div>
+
+    <script>
+        // 1. Submit to Oracle Backend
+        async function submitData() {
+            const type = document.getElementById('resType').value;
+            const qty = parseFloat(document.getElementById('qty').value);
+            const date = document.getElementById('date').value;
+
+            if(!qty || !date) return alert("Please fill all fields");
+
+            const response = await fetch('/api/resources', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, qty, date })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert("Data saved successfully!");
+                // Clear form
+                document.getElementById('qty').value = '';
+                document.getElementById('date').value = '';
+                // Reload the data table
+                loadResourceLogs();
+            } else {
+                alert("Error saving data: " + (result.error || "Unknown error"));
+            }
+        }
+
+        // 2. Load all resource logs from database
+        async function loadResourceLogs() {
+            try {
+                const response = await fetch('/api/resource-list');
+                const logs = await response.json();
+                
+                const tbody = document.getElementById('logTable');
+                tbody.innerHTML = '';
+                
+                if (logs && logs.length > 0) {
+                    logs.forEach(log => {
+                        const row = tbody.insertRow();
+                        row.insertCell(0).textContent = log.ENTRY_DATE || log.entry_date || 'N/A';
+                        row.insertCell(1).textContent = log.RES_TYPE || log.res_type || 'N/A';
+                        row.insertCell(2).textContent = log.QUANTITY || log.quantity || '0';
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;opacity:0.5;">No data logged yet</td></tr>';
+                }
+            } catch (err) {
+                console.error('Error loading logs:', err);
+            }
+        }
+
+        // 3. Load on page load
+        window.onload = function() {
+            loadResourceLogs();
+        };
+
+        // 4. Logout Logic
+        function logout() {
+            localStorage.removeItem('user'); // Clear local session
+            window.location.href = 'login.html'; // Redirect to login
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+// Test the resource-list endpoint
+const http = require('http');
+
+function makeRequest(method, path) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: 'localhost',
+            port: 3000,
+            path: path,
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        const req = http.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+                resolve({ 
+                    status: res.statusCode, 
+                    body: body
+                });
+            });
+        });
+
+        req.on('error', reject);
+        req.end();
+    });
+}
+
+async function test() {
+    try {
+        console.log('Testing GET /api/resource-list...');
+        const result = await makeRequest('GET', '/api/resource-list');
+        console.log('Status:', result.status);
+        console.log('Body:', result.body);
+    } catch (err) {
+        console.error('Error:', err.message);
+    }
+}
+
+setTimeout(test, 2000);
