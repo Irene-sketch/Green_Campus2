@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sustainability Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; min-height: 100vh; background: radial-gradient(ellipse at top left, #2d7a4f 0%, #1a5c38 40%, #0f3d22 100%); color: #fff; }
+  .page { display: block; min-height: 100vh; padding: 2.5rem 2rem; }
+  .header { text-align: center; margin-bottom: 2.5rem; }
+  .header h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
+  .header p { font-size: 0.9rem; color: rgba(255,255,255,0.5); letter-spacing: 0.1em; text-transform: uppercase; }
+  .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-width: 700px; margin: 0 auto 2rem; }
+  .metric-card { background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.22); border-radius: 1.2rem; padding: 1.6rem 1.4rem; cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden; }
+  .metric-card:hover { background: rgba(255,255,255,0.2); transform: translateY(-3px); }
+  .metric-icon { font-size: 1.6rem; margin-bottom: 0.8rem; display: block; }
+  .metric-label { font-size: 0.72rem; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 0.5rem; }
+  .metric-value { font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1; }
+  .metric-unit { font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.5); margin-left: 0.2rem; }
+  .nav-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; max-width: 700px; margin: 0 auto; }
+  .nav-btn { background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.22); border-radius: 0.8rem; padding: 0.9rem 0.5rem; color: #fff; cursor: pointer; text-align: center; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Sustainability Tracker</h1>
+    <p>Resource Management</p>
+  </div>
+  <div class="metric-grid">
+    <div class="metric-card" onclick="window.location.href='reports.html'">
+      <span class="metric-icon">⚡</span>
+      <div class="metric-label">Total Electricity</div>
+      <div class="metric-value" id="dash-elec">0<span class="metric-unit">kWh</span></div>
+    </div>
+    <div class="metric-card" onclick="window.location.href='reports.html'">
+      <span class="metric-icon">💧</span>
+      <div class="metric-label">Total Water</div>
+      <div class="metric-value" id="dash-water">0<span class="metric-unit">L</span></div>
+    </div>
+    <div class="metric-card" onclick="window.location.href='reports.html'">
+      <span class="metric-icon">🗑️</span>
+      <div class="metric-label">Total Waste</div>
+      <div class="metric-value" id="dash-waste">0<span class="metric-unit">kg</span></div>
+    </div>
+    <div class="metric-card" onclick="window.location.href='reports.html'">
+      <span class="metric-icon">🌿</span>
+      <div class="metric-label">Carbon Footprint</div>
+      <div class="metric-value" id="dash-carbon">0.00<span class="metric-unit">MT</span></div>
+    </div>
+  </div>
+  <div class="nav-buttons">
+    <button class="nav-btn" onclick="window.location.href='resource_usage.html'">📊 Resource Log</button>
+    <button class="nav-btn" onclick="window.location.href='green_campus.html'">🌱 Waste Log</button>
+  </div>
+</div>
+
+<script>
+  window.onload = function() {
+    const data = JSON.parse(localStorage.getItem('campusData')) || { electricity: [], water: [], waste: [] };
+    const sumQty = (arr) => (Array.isArray(arr) ? arr : []).reduce((s, e) => s + (Number.isFinite(e?.qty) ? e.qty : 0), 0);
+    const elec = sumQty(data.electricity);
+    const water = sumQty(data.water);
+    const waste = sumQty(data.waste);
+    
+    document.getElementById('dash-elec').innerHTML = elec + '<span class="metric-unit">kWh</span>';
+    document.getElementById('dash-water').innerHTML = water + '<span class="metric-unit">L</span>';
+    document.getElementById('dash-waste').innerHTML = waste + '<span class="metric-unit">kg</span>';
+    document.getElementById('dash-carbon').innerHTML = ((elec * 0.0007) + (waste * 0.0005)).toFixed(2) + '<span class="metric-unit">MT</span>';
+  };
+</script>
+</body>
+</html>

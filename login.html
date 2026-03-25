@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainability Tracker | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { height: 100vh; background: linear-gradient(135deg, #0f5132, #198754); display: flex; justify-content: center; align-items: center; }
+        .main-container { text-align: center; }
+        .title { font-size: 36px; font-weight: 700; color: #ffffff; margin-bottom: 25px; letter-spacing: 1px; }
+        .login-container { background: rgba(255,255,255,0.1); padding: 40px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); width: 350px; color: white; }
+        .input-group { text-align: left; margin-bottom: 20px; }
+        .input-group label { font-size: 14px; margin-bottom: 6px; display: block; }
+        .input-group input { width: 100%; padding: 11px; border-radius: 8px; border: none; outline: none; font-size: 14px; }
+        button { width: 100%; padding: 12px; background-color: #20c997; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; color: #000; margin-top: 10px; }
+        button:hover { background-color: #17a589; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1 class="title">Sustainability Tracker</h1>
+        <div class="login-container">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="username">Username / Email</label>
+                    <input id="username" name="username" type="text" placeholder="Enter username or email" autocomplete="username" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" placeholder="Enter password" autocomplete="current-password" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            window.location.href = 'dashboard.html';
+        });
+    </script>
+</body>
+</html>
