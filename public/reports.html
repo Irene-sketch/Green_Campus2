@@ -68,9 +68,14 @@
                 document.getElementById('totalWater').innerText = water.toLocaleString();
                 document.getElementById('totalWaste').innerText = waste.toLocaleString();
                 document.getElementById('totalCarbon').innerText = totalCarbon;
-                document.getElementById('carbonElec').innerText = carbonFromElec;
-                document.getElementById('carbonWater').innerText = carbonFromWater;
-                document.getElementById('carbonWaste').innerText = carbonFromWaste;
+
+                // breakdown fields removed from UI, keep script robust
+                const ce = document.getElementById('carbonElec');
+                const cw = document.getElementById('carbonWater');
+                const cwaste = document.getElementById('carbonWaste');
+                if (ce) ce.innerText = carbonFromElec;
+                if (cw) cw.innerText = carbonFromWater;
+                if (cwaste) cwaste.innerText = carbonFromWaste;
 
                 if (window.Chart) {
                     const ctx = document.getElementById('resourceChart').getContext('2d');
