@@ -8,6 +8,8 @@
         .card { background: rgba(255,255,255,0.05); padding: 25px; border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
         .val { font-size: 2.5rem; color: #10b981; font-weight: bold; }
         .back-btn { display: block; text-align: center; color: #fff; text-decoration: none; margin-top: 30px; }
+        .breakdown { margin-top: 15px; font-size: 0.9rem; opacity: 0.8; }
+        .breakdown-item { display: flex; justify-content: space-between; padding: 5px 0; }
     </style>
 </head>
 <body>
@@ -16,24 +18,87 @@
         <div class="card" style="text-align:center">
             <h3>Carbon Footprint</h3>
             <div class="val" id="totalCarbon">0.00</div><div>Metric Tons CO2e</div>
+
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div class="card"><h3>Electricity</h3><div class="val" id="totalElec">0</div><span>kWh</span></div>
-            <div class="card"><h3>Water</h3><div class="val" id="totalWater">0</div><span>L</span></div>
+        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap: 20px;">
+            <div class="card">
+                <h3>Electricity</h3>
+                <div class="val" id="totalElec">0</div>
+                <span>kWh</span>
+            </div>
+            <div class="card">
+                <h3>Water</h3>
+                <div class="val" id="totalWater">0</div>
+                <span>Liters</span>
+            </div>
+            <div class="card">
+                <h3>Waste</h3>
+                <div class="val" id="totalWaste">0</div>
+                <span>kg</span>
+            </div>
+        </div>
+        <div class="card" style="margin-top:20px;text-align:center;">
+            <h3>Resource Usage Chart</h3>
+            <canvas id="resourceChart" width="700" height="320"></canvas>
         </div>
         <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        window.onload = function() {
-            const data = JSON.parse(localStorage.getItem('campusData')) || { electricity: [], water: [], waste: [] };
-            const elec = data.electricity.reduce((s, e) => s + e.qty, 0);
-            const water = data.water.reduce((s, e) => s + e.qty, 0);
-            const waste = data.waste.reduce((s, e) => s + e.qty, 0);
+        window.onload = async function() {
+            try {
+                const response = await fetch('/api/reports');
+                const data = await response.json();
+                
+                const elec = data.elec || 0;
+                const water = data.water || 0;
+                const waste = data.waste || 0;
 
-            document.getElementById('totalElec').innerText = elec;
-            document.getElementById('totalWater').innerText = water;
-            document.getElementById('totalCarbon').innerText = ((elec * 0.0007) + (waste * 0.0005)).toFixed(2);
+                // Carbon footprint calculations
+                // Electricity: 0.0007 metric tons CO2e per kWh
+                // Water: 0.0005 metric tons CO2e per liter
+                // Waste: 0.0006 metric tons CO2e per kg (adjust as needed)
+                const carbonFromElec = (elec * 0.0007).toFixed(4);
+                const carbonFromWater = (water * 0.0005).toFixed(4);
+                const carbonFromWaste = (waste * 0.0006).toFixed(4);
+                const totalCarbon = (parseFloat(carbonFromElec) + parseFloat(carbonFromWater) + parseFloat(carbonFromWaste)).toFixed(2);
+
+                document.getElementById('totalElec').innerText = elec.toLocaleString();
+                document.getElementById('totalWater').innerText = water.toLocaleString();
+                document.getElementById('totalWaste').innerText = waste.toLocaleString();
+                document.getElementById('totalCarbon').innerText = totalCarbon;
+                document.getElementById('carbonElec').innerText = carbonFromElec;
+                document.getElementById('carbonWater').innerText = carbonFromWater;
+                document.getElementById('carbonWaste').innerText = carbonFromWaste;
+
+                if (window.Chart) {
+                    const ctx = document.getElementById('resourceChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Electricity', 'Water', 'Waste'],
+                            datasets: [{
+                                label: 'Total usage',
+                                data: [elec, water, waste],
+                                backgroundColor: ['rgba(16, 185, 129, 0.7)', 'rgba(14, 165, 233, 0.75)', 'rgba(251, 191, 36, 0.7)'],
+                                borderColor: ['rgba(16, 185, 129, 1)', 'rgba(14, 165, 233, 1)', 'rgba(251, 191, 36, 1)'],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true }
+                            },
+                            responsive: true,
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading reports:', err);
+                document.getElementById('totalCarbon').innerText = 'Error';
+            }
         };
     </script>
 </body>

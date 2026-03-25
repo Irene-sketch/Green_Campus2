@@ -63,10 +63,7 @@
   window.onload = async function() {
     // Check if user is logged in
     if (!localStorage.getItem('user')) {
-      window.location.href = 'login.html';
-      return;
-    }
-
+      window.location.href = 'index.html';
     // Fetch data from API
     try {
       const response = await fetch('/api/reports');
@@ -74,12 +71,13 @@
       
       const elec = data.elec || 0;
       const water = data.water || 0;
-      const waste = 0; // Not in database yet
+      const waste = data.waste || 0;
       
       document.getElementById('dash-elec').innerHTML = elec + '<span class="metric-unit">kWh</span>';
       document.getElementById('dash-water').innerHTML = water + '<span class="metric-unit">L</span>';
       document.getElementById('dash-waste').innerHTML = waste + '<span class="metric-unit">kg</span>';
-      document.getElementById('dash-carbon').innerHTML = ((elec * 0.0007) + (waste * 0.0005)).toFixed(2) + '<span class="metric-unit">MT</span>';
+      const carbon = ((elec * 0.0007) + (water * 0.0005) + (waste * 0.0006)).toFixed(2);
+      document.getElementById('dash-carbon').innerHTML = carbon + '<span class="metric-unit">MT</span>';
     } catch (err) {
       console.error('Error loading reports:', err);
     }
@@ -87,7 +85,7 @@
 
   function logout() {
     localStorage.removeItem('user');
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
   }
 </script>
 </body>

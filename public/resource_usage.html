@@ -29,23 +29,34 @@
         <div class="form-row">
             <div class="form-group">
                 <label>Resource Type</label>
-                <select id="resType"><option value="electricity">Electricity</option><option value="water">Water</option></select>
+                <select id="resType">
+                    <option value="electricity">Electricity</option>
+                    <option value="water">Water</option>
+                    <option value="waste">Waste</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Building</label>
-                <select id="building"><option>Main Block</option><option>Civil Block</option></select>
+                <select id="building">
+                    <option>Main Block</option>
+                    <option>Civil Block</option>
+                    <option>Mech Block</option>
+                    <option>Chemical Block</option>
+                    <option>Workshop Block</option>
+                </select>
             </div>
         </div>
         <div class="form-row">
             <div class="form-group"><label>Value</label><input type="number" id="qty"></div>
             <div class="form-group"><label>Date</label><input type="date" id="date"></div>
+            <div class="form-group"><label>Time</label><input type="time" id="time"></div>
         </div>
         <button class="btn" onclick="submitData()">Submit Data</button>
     </div>
 
     <div class="card">
         <table>
-            <thead><tr><th>DATE</th><th>TYPE</th><th>VALUE</th></tr></thead>
+            <thead><tr><th>DATE & TIME</th><th>BUILDING</th><th>TYPE</th><th>VALUE</th></tr></thead>
             <tbody id="logTable"></tbody>
         </table>
     </div>
@@ -59,29 +70,70 @@
         // 1. Submit to Oracle Backend
         async function submitData() {
             const type = document.getElementById('resType').value;
+            const building = document.getElementById('building').value;
             const qty = parseFloat(document.getElementById('qty').value);
-            const date = document.getElementById('date').value;
+            let date = document.getElementById('date').value.trim();
+            const time = document.getElementById('time').value.trim();
 
-            if(!qty || !date) return alert("Please fill all fields");
+            if(!qty || !date || !time) {
+                return alert("Please fill all fields");
+            }
+
+            // Accept dd-mm-yyyy or yyyy-mm-dd
+            if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+                const parts = date.split('-');
+                date = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
+                const parts = date.split('/');
+                date = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+
+            // Ensure time in HH:MM:SS
+            const normalizedTime = /^\d{2}:\d{2}$/.test(time) ? `${time}:00` : time;
 
             const response = await fetch('/api/resources', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type, qty, date })
+                body: JSON.stringify({ type, qty, date, time: normalizedTime, building })
             });
 
             const result = await response.json();
 
             if (response.ok) {
                 alert("Data saved successfully!");
-                // Clear form
+                appendLogRow({
+                    type,
+                    res_type: type,
+                    qty,
+                    quantity: qty,
+                    building,
+                    entry_date: date,
+                    entry_time: normalizedTime
+                });
+
                 document.getElementById('qty').value = '';
                 document.getElementById('date').value = '';
-                // Reload the data table
+                document.getElementById('time').value = '';
+                // Keep existing data refresh to ensure consistency with DB
                 loadResourceLogs();
             } else {
-                alert("Error saving data: " + (result.error || "Unknown error"));
+                alert(`Error saving data (${response.status}): ${result.error || JSON.stringify(result)}`);
             }
+        }
+
+        // Add a single row to the table (for immediate display after submit)
+        function appendLogRow(log) {
+            const tbody = document.getElementById('logTable');
+            const row = tbody.insertRow(0); // insert at top for latest
+
+            const dateStr = log.ENTRY_DATE || log.LOG_DATE || log.entry_date || log.log_date || null;
+            const timeStr = log.ENTRY_TIME || log.entry_time || log.entry_time || null;
+            const formattedDateTime = formatDateTime(dateStr, timeStr);
+
+            row.insertCell(0).textContent = formattedDateTime;
+            row.insertCell(1).textContent = log.BUILDING || log.building || 'N/A';
+            row.insertCell(2).textContent = log.RES_TYPE || log.res_type || log.type || 'N/A';
+            row.insertCell(3).textContent = log.QUANTITY || log.quantity || log.qty || '0';
         }
 
         // 2. Load all resource logs from database
@@ -94,17 +146,49 @@
                 tbody.innerHTML = '';
                 
                 if (logs && logs.length > 0) {
-                    logs.forEach(log => {
-                        const row = tbody.insertRow();
-                        row.insertCell(0).textContent = log.ENTRY_DATE || log.entry_date || 'N/A';
-                        row.insertCell(1).textContent = log.RES_TYPE || log.res_type || 'N/A';
-                        row.insertCell(2).textContent = log.QUANTITY || log.quantity || '0';
-                    });
+                    logs.forEach(log => appendLogRow(log));
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;opacity:0.5;">No data logged yet</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;opacity:0.5;">No data logged yet</td></tr>';
                 }
             } catch (err) {
                 console.error('Error loading logs:', err);
+            }
+        }
+
+        // Format date and time
+        function formatDateTime(dateStr, timeStr) {
+            try {
+                if (!dateStr) return 'N/A';
+
+                let dateObj = dateStr;
+                if (!(dateObj instanceof Date)) {
+                    dateObj = new Date(dateStr);
+                }
+                if (isNaN(dateObj.getTime())) {
+                    return String(dateStr);
+                }
+
+                const formattedDate = dateObj.toLocaleDateString('en-GB');
+
+                let timePart = '00:00:00';
+                if (timeStr) {
+                    if (timeStr instanceof Date) {
+                        timePart = timeStr.toTimeString().split(' ')[0];
+                    } else if (typeof timeStr === 'string') {
+                        const hasT = timeStr.indexOf('T');
+                        if (hasT > 0) {
+                            timePart = new Date(timeStr).toTimeString().split(' ')[0];
+                        } else {
+                            timePart = timeStr.length === 5 ? `${timeStr}:00` : timeStr.substring(0, 8);
+                        }
+                    }
+                } else if (dateObj instanceof Date) {
+                    timePart = dateObj.toTimeString().split(' ')[0];
+                }
+
+                return `${formattedDate} ${timePart}`;
+            } catch (e) {
+                return String(dateStr);
             }
         }
 
@@ -116,7 +200,7 @@
         // 4. Logout Logic
         function logout() {
             localStorage.removeItem('user'); // Clear local session
-            window.location.href = 'login.html'; // Redirect to login
+            window.location.href = 'index.html'; // Redirect to login
         }
     </script>
 </body>

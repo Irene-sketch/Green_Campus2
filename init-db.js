@@ -37,13 +37,28 @@ async function initializeDatabase() {
                     id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                     res_type VARCHAR2(50) NOT NULL,
                     quantity NUMBER NOT NULL,
-                    log_date DATE NOT NULL
+                    building VARCHAR2(100),
+                    entry_date DATE,
+                    entry_time TIMESTAMP DEFAULT SYSTIMESTAMP
                 )
             `, [], { autoCommit: true });
             console.log("✓ Created resource_logs table");
         } catch (err) {
             if (err.errorNum === 955) {
                 console.log("✓ resource_logs table already exists");
+                // Try to add missing columns
+                try {
+                    await conn.execute(`ALTER TABLE resource_logs ADD (building VARCHAR2(100))`, [], { autoCommit: true });
+                    console.log("✓ Added building column to resource_logs");
+                } catch (e) {
+                    if (e.errorNum !== 1430) console.log("Building column might already exist");
+                }
+                try {
+                    await conn.execute(`ALTER TABLE resource_logs ADD (entry_time TIMESTAMP DEFAULT SYSTIMESTAMP)`, [], { autoCommit: true });
+                    console.log("✓ Added entry_time column to resource_logs");
+                } catch (e) {
+                    if (e.errorNum !== 1430) console.log("Entry_time column might already exist");
+                }
             } else {
                 throw err;
             }

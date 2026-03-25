@@ -53,12 +53,20 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ success: false, message: "Username and password are required." });
+    }
+
     try {
         const sql = `SELECT * FROM users WHERE username = :un AND password = :pw`;
         const result = await runQuery(sql, { un: username, pw: password });
-        res.json({ success: result.rows.length > 0 });
+        if (result.rows.length > 0) {
+            return res.json({ success: true, message: "Login successful." });
+        }
+        return res.status(401).json({ success: false, message: "Invalid username or password." });
     } catch (err) {
-        res.status(500).json({ error: "Database error" });
+        console.error('Login error:', err);
+        res.status(500).json({ success: false, message: "Database error" });
     }
 });
 
@@ -67,23 +75,41 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.post('/api/resources', async (req, res) => {
-    const { type, qty, date } = req.body;
+    const { type, qty, date, time, building } = req.body;
+    const formattedTime = time && time.length===5 ? `${time}:00` : time || '00:00:00';
     try {
-        const sql = `INSERT INTO resource_logs (res_type, quantity, entry_date) VALUES (:type, :qty, TO_DATE(:dt, 'YYYY-MM-DD'))`;
-        await runQuery(sql, { type, qty, dt: date });
+        const sql = `INSERT INTO resource_logs (res_type, quantity, building, entry_date, entry_time) 
+                     VALUES (:type, :qty, :building, TO_DATE(:dt, 'YYYY-MM-DD'), TO_TIMESTAMP(:tm, 'HH24:MI:SS'))`;
+        await runQuery(sql, { type, qty, building, dt: date, tm: formattedTime });
         res.json({ success: true });
     } catch (err) {
-        console.error("Error saving resource:", err);
+        console.error("Error saving resource (entry_date path):", err);
+        if (err.errorNum === 904 || /ORA-00904/.test(err.message)) {
+            // fallback for legacy schema where entry_date doesn't exist
+            try {
+                const sql2 = `INSERT INTO resource_logs (res_type, quantity, building, log_date, entry_time) 
+                              VALUES (:type, :qty, :building, TO_DATE(:dt, 'YYYY-MM-DD'), TO_TIMESTAMP(:tm, 'HH24:MI:SS'))`;
+                await runQuery(sql2, { type, qty, building, dt: date, tm: formattedTime });
+                return res.json({ success: true, legacy: true });
+            } catch (err2) {
+                console.error("Error saving resource (log_date fallback):", err2);
+                return res.status(500).json({ error: err2.message });
+            }
+        }
         res.status(500).json({ error: err.message });
     }
 });
 
 app.get('/api/reports', async (req, res) => {
     try {
-        const sql = `SELECT (SELECT SUM(quantity) FROM resource_logs WHERE res_type='electricity') as elec, (SELECT SUM(quantity) FROM resource_logs WHERE res_type='water') as water FROM dual`;
+        const sql = `SELECT 
+                      (SELECT NVL(SUM(quantity),0) FROM resource_logs WHERE res_type='electricity') as elec,
+                      (SELECT NVL(SUM(quantity),0) FROM resource_logs WHERE res_type='water') as water,
+                      (SELECT NVL(SUM(quantity),0) FROM resource_logs WHERE res_type='waste') as waste
+                     FROM dual`;
         const result = await runQuery(sql, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
-        const data = result.rows[0] || { ELEC: 0, WATER: 0 };
-        res.json({ elec: data.ELEC || 0, water: data.WATER || 0 });
+        const data = result.rows[0] || { ELEC: 0, WATER: 0, WASTE: 0 };
+        res.json({ elec: data.ELEC || 0, water: data.WATER || 0, waste: data.WASTE || 0 });
     } catch (err) {
         console.error("Error fetching reports:", err);
         res.status(500).json({ error: err.message });
@@ -92,7 +118,12 @@ app.get('/api/reports', async (req, res) => {
 
 app.get('/api/resource-list', async (req, res) => {
     try {
-        const sql = `SELECT log_id, res_type, quantity, entry_date FROM resource_logs ORDER BY entry_date DESC`;
+        const sql = `SELECT id, res_type, quantity, building,
+                            NVL(entry_date, log_date) AS entry_date,
+                            NVL(entry_time, log_time) AS entry_time
+                     FROM resource_logs
+                     ORDER BY NVL(entry_date, log_date) DESC, NVL(entry_time, log_time) DESC`;
+        console.log('resource-list SQL:', sql);
         const result = await runQuery(sql, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
         res.json(result.rows || []);
     } catch (err) {
