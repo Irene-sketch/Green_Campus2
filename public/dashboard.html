@@ -1,94 +1,1109 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sustainability Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
+   @keyframes floatBranches {
+  0% {
+    transform: translateY(0px) translateX(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px) scale(1.02);
+  }
+  100% {
+    transform: translateY(15px) translateX(-10px) scale(1);
+  }
+}
+  @keyframes floatBranchesSlow {
+  0% { transform: translate(0,0); }
+  100% { transform: translate(-30px, 20px); }
+}
+  @keyframes branchDrift {
+    0%   { transform: translateY(0px) rotate(0deg); opacity: 0.55; }
+    50%  { transform: translateY(-14px) rotate(0.6deg); opacity: 0.72; }
+    100% { transform: translateY(6px) rotate(-0.4deg); opacity: 0.55; }
+  }
+  @keyframes branchDriftR {
+    0%   { transform: translateY(0px) rotate(0deg) scaleX(-1); opacity: 0.45; }
+    50%  { transform: translateY(-10px) rotate(-0.5deg) scaleX(-1); opacity: 0.62; }
+    100% { transform: translateY(8px) rotate(0.3deg) scaleX(-1); opacity: 0.45; }
+  }
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.18; }
+    50%       { opacity: 0.32; }
+  }
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  display: flex;
+  justify-content: space-between; /* 👈 IMPORTANT change */
+  align-items: center;
+
+  padding: 15px 40px;
+
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+
+  z-index: 1000;
+}
+
+/* Left title */
+.logo {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Right side container */
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+/* Links */
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* Hover */
+.nav-links a:hover {
+  color: #00ffcc;
+}
+
+/* Logout */
+.nav-links .logout {
+  color: #ff6b6b;
+}
+  :root {
+    --bg-deep:     #0a2e1e;
+    --bg-mid:      #0f3d2e;
+    --bg-light:    #145a3a;
+    --glass-bg:    rgba(255,255,255,0.055);
+    --glass-bg2:   rgba(255,255,255,0.095);
+    --glass-border: rgba(255,255,255,0.10);
+    --glass-border2: rgba(255,255,255,0.16);
+    --accent-green: #4ade80;
+    --accent-sage:  #86efac;
+    --accent-blue:  #38bdf8;
+    --accent-orange:#fb923c;
+    --accent-purple:#a78bfa;
+    --text-primary: #f0f4f0;
+    --text-secondary: rgba(240,244,240,0.55);
+    --text-muted: rgba(240,244,240,0.30);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', sans-serif; min-height: 100vh; background: radial-gradient(ellipse at top left, #2d7a4f 0%, #1a5c38 40%, #0f3d22 100%); color: #fff; }
-  .page { display: block; min-height: 100vh; padding: 2.5rem 2rem; }
-  .header { text-align: center; margin-bottom: 2.5rem; }
-  .header h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
-  .header p { font-size: 0.9rem; color: rgba(255,255,255,0.5); letter-spacing: 0.1em; text-transform: uppercase; }
-  .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-width: 700px; margin: 0 auto 2rem; }
-  .metric-card { background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.22); border-radius: 1.2rem; padding: 1.6rem 1.4rem; cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden; }
-  .metric-card:hover { background: rgba(255,255,255,0.2); transform: translateY(-3px); }
-  .metric-icon { font-size: 1.6rem; margin-bottom: 0.8rem; display: block; }
-  .metric-label { font-size: 0.72rem; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 0.5rem; }
-  .metric-value { font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1; }
-  .metric-unit { font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.5); margin-left: 0.2rem; }
-  .nav-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; max-width: 700px; margin: 0 auto; }
-  .nav-btn { background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.22); border-radius: 0.8rem; padding: 0.9rem 0.5rem; color: #fff; cursor: pointer; text-align: center; font-weight: 500; }
+
+  /* ─── BACKGROUND CANVAS ─────────────────────────────── */
+  body {
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    color: var(--text-primary);
+    background-color: var(--bg-deep);
+    position: relative;
+    overflow-x: hidden;
+    padding-top: 80px;
+  }
+
+  /* Layered diagonal gradient base */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 10%, #1a5c3a 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 85% 80%, #0f3d2e 0%, transparent 55%),
+      radial-gradient(ellipse 40% 40% at 70% 20%, #183d28 0%, transparent 50%),
+      linear-gradient(145deg, #0f3d2e 0%, #0a2e1e 45%, #061a0f 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* SVG organic wave/leaf pattern layer */
+ body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='1200' height='1200' viewBox='0 0 1200 1200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1.2' fill='none'%3E%3Cpath d='M150 1000 C300 700, 500 800, 650 500'/%3E%3Cpath d='M650 500 C800 200, 1000 300, 1100 100'/%3E%3Cpath d='M300 800 C350 750, 420 780, 480 720'/%3E%3Cpath d='M750 400 C800 350, 900 380, 950 320'/%3E%3Cpath d='M500 900 C540 860, 600 880, 640 820'/%3E%3Cpath d='M900 250 C940 210, 1000 240, 1040 180'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 1200px 1200px;
+  opacity: 0.9;
+  animation: floatBranches 40s ease-in-out infinite alternate;
+  mix-blend-mode: overlay;
+  z-index: 0;
+  pointer-events: none;
+}
+
+  /* Fine grain/noise texture overlay */
+  .noise-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    opacity: 0.028;
+    mix-blend-mode: overlay;
+  }
+
+  /* Soft flowing wave shapes for depth */
+  .wave-shape {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wave-shape-1 {
+    bottom: -120px; left: -80px;
+    width: 600px; height: 400px;
+    background: radial-gradient(ellipse, rgba(34,197,94,0.06) 0%, transparent 70%);
+    border-radius: 50% 50% 40% 60% / 60% 40% 60% 40%;
+    transform: rotate(-15deg);
+  }
+  .wave-shape-2 {
+    top: -100px; right: -120px;
+    width: 500px; height: 500px;
+    background: radial-gradient(ellipse, rgba(20,90,58,0.12) 0%, transparent 65%);
+    border-radius: 40% 60% 60% 40% / 40% 40% 60% 60%;
+    transform: rotate(25deg);
+  }
+  .wave-shape-3 {
+    top: 40%; left: 30%;
+    width: 700px; height: 300px;
+    background: radial-gradient(ellipse, rgba(26,92,58,0.045) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: rotate(-8deg);
+    pointer-events: none;
+  }
+ /* ===== BRANCHES ===== */
+.branch-layer,.branch-layer-2{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  transition:transform 0.2s ease-out;
+}
+
+.branch-layer{
+  background-image:url("data:image/svg+xml,%3Csvg width='1200' height='1200' viewBox='0 0 1200 1200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23ffffff' stroke-opacity='0.12' stroke-width='1.5' fill='none'%3E%3Cpath d='M150 1000 C300 700, 500 800, 650 500'/%3E%3Cpath d='M650 500 C800 200, 1000 300, 1100 100'/%3E%3C/g%3E%3C/svg%3E");
+  animation:floatBranches 40s ease-in-out infinite alternate;
+  mix-blend-mode:soft-light;
+}
+
+.branch-layer::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle,rgba(255,255,255,0.08),transparent 70%);
+  filter:blur(60px);
+}
+
+.branch-layer-2{
+  background-image:url("data:image/svg+xml,%3Csvg width='1000' height='1000' viewBox='0 0 1000 1000' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1' fill='none'%3E%3Cpath d='M100 600 C200 400, 350 450, 450 300'/%3E%3C/g%3E%3C/svg%3E");
+  animation:floatBranchesSlow 60s ease-in-out infinite alternate;
+  mix-blend-mode:soft-light;
+}
+
+  /* ── BOTANICAL BRANCHES ───────────────────────────── */
+  .botanical-branch {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .botanical-branch svg {
+    display: block;
+    filter: drop-shadow(0 0 18px rgba(255,255,255,0.18)) drop-shadow(0 0 6px rgba(200,255,220,0.12));
+  }
+  .branch-botanical-left {
+    bottom: -30px;
+    left: -40px;
+    width: 480px;
+    animation: branchDrift 12s ease-in-out infinite;
+  }
+  .branch-botanical-right {
+    top: -20px;
+    right: -50px;
+    width: 420px;
+    animation: branchDriftR 15s ease-in-out infinite;
+  }
+  .branch-botanical-left::after,
+  .branch-botanical-right::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255,255,255,0.06), transparent 70%);
+    animation: glowPulse 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* All content sits above background layers */
+  .page {
+    position: relative;
+    z-index: 2;
+  }
+/* ===== MIST ===== */
+.mist{
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle,rgba(255,255,255,0.05),transparent 70%);
+  filter:blur(80px);
+  animation:mistMove 30s ease-in-out infinite alternate;
+}
+.sparkle{
+  position:fixed;
+  width:2px;height:2px;
+  background:white;
+  border-radius:50%;
+  animation:sparkleFloat linear infinite;
+}
+
+  /* ─── PAGE SYSTEM ─────────────────────────────────────── */
+  .page { display: none; min-height: 100vh; padding: 2.5rem 2rem 4rem; }
+  .page.active { display: block; }
+
+  /* ─── HEADER ──────────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-top: 0.5rem;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+    line-height: 1.1;
+  }
+  .header p {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* ─── GLASS COMPONENTS ────────────────────────────────── */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 1.4rem;
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    box-shadow:
+      0 4px 24px rgba(0,0,0,0.18),
+      0 1px 0 rgba(255,255,255,0.06) inset,
+      0 -1px 0 rgba(0,0,0,0.1) inset;
+  }
+
+  /* ─── BACK BUTTON ─────────────────────────────────────── */
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    padding: 0.55rem 1.3rem;
+    border-radius: 2rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    margin-bottom: 2rem;
+    transition: all 0.25s ease;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(8px);
+  }
+  .back-btn:hover {
+    background: rgba(255,255,255,0.13);
+    color: var(--text-primary);
+    border-color: var(--glass-border2);
+    transform: translateX(-2px);
+  }
+
+  /* ─── MONTH LABEL ─────────────────────────────────────── */
+  .month-label {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 1.8rem;
+    font-weight: 500;
+  }
+
+  /* ─── METRIC GRID ─────────────────────────────────────── */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 720px;
+    margin: 0 auto 1.2rem;
+  }
+
+  .metric-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 1.4rem;
+    padding: 1.7rem 1.5rem 1.4rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow:
+      0 4px 20px rgba(0,0,0,0.16),
+      0 1px 0 rgba(255,255,255,0.065) inset;
+  }
+
+  .metric-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    border-radius: 1.4rem 1.4rem 0 0;
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2.5px;
+    border-radius: 0 0 1.4rem 1.4rem;
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .metric-card:hover {
+    background: var(--glass-bg2);
+    transform: translateY(-4px);
+    box-shadow:
+      0 12px 40px rgba(0,0,0,0.28),
+      0 1px 0 rgba(255,255,255,0.10) inset;
+    border-color: var(--glass-border2);
+  }
+  .metric-card:hover::before { opacity: 1; }
+  .metric-card:hover::after  { opacity: 1; }
+
+  .metric-card.elec::before { background: linear-gradient(90deg, #4ade80, #22c55e); }
+  .metric-card.elec::after  { background: linear-gradient(90deg, rgba(74,222,128,0.5), transparent); }
+  .metric-card.water::before { background: linear-gradient(90deg, #38bdf8, #0ea5e9); }
+  .metric-card.water::after  { background: linear-gradient(90deg, rgba(56,189,248,0.5), transparent); }
+  .metric-card.waste::before { background: linear-gradient(90deg, #fb923c, #f97316); }
+  .metric-card.waste::after  { background: linear-gradient(90deg, rgba(251,146,60,0.5), transparent); }
+  .metric-card.carbon::before { background: linear-gradient(90deg, #a78bfa, #8b5cf6); }
+  .metric-card.carbon::after  { background: linear-gradient(90deg, rgba(167,139,250,0.5), transparent); }
+
+  .metric-card.elec:hover  { box-shadow: 0 12px 40px rgba(0,0,0,0.28), 0 0 30px rgba(74,222,128,0.08); }
+  .metric-card.water:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.28), 0 0 30px rgba(56,189,248,0.08); }
+  .metric-card.waste:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.28), 0 0 30px rgba(251,146,60,0.08); }
+  .metric-card.carbon:hover{ box-shadow: 0 12px 40px rgba(0,0,0,0.28), 0 0 30px rgba(167,139,250,0.08); }
+
+  .metric-icon {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+  }
+  .metric-label {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  .metric-value {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .metric-unit {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 0.2rem;
+    letter-spacing: 0;
+  }
+  .metric-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.45rem;
+  }
+  .metric-nav {
+    position: absolute;
+    top: 1.3rem; right: 1.3rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    transition: color 0.2s, transform 0.2s;
+  }
+  .metric-card:hover .metric-nav {
+    color: var(--text-secondary);
+    transform: translateX(2px);
+  }
+
+  /* ─── NAV BUTTONS ─────────────────────────────────────── */
+  .nav-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .nav-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    padding: 1rem 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(12px);
+  }
+  .nav-btn:hover {
+    background: rgba(255,255,255,0.12);
+    color: var(--text-primary);
+    border-color: var(--glass-border2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+  .nav-btn .nb-icon { font-size: 1.15rem; }
+
+  /* ─── TRACKER PAGES ───────────────────────────────────── */
+  .tracker-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .form-card {
+    padding: 2rem 1.8rem;
+    margin-bottom: 1.6rem;
+  }
+
+  .form-grid {
+    display: grid;
+    gap: 1.2rem;
+  }
+  .form-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .form-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .field label {
+    display: block;
+    font-size: 0.67rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 0.7rem;
+    color: var(--text-primary);
+    padding: 0.8rem 1rem;
+    font-size: 0.92rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    
+  }
+  .field input:focus,
+  .field select:focus {
+    border-color: rgba(74,222,128,0.45);
+    background: rgba(0,0,0,0.28);
+    box-shadow: 0 0 0 3px rgba(74,222,128,0.08);
+  }
+  .field input::placeholder { color: var(--text-muted); }
+  .field select option { background: #0f3d2e; color: #fff; }
+
+  .log-btn {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border: none;
+    border-radius: 0.7rem;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.95rem 2.2rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 16px rgba(34,197,94,0.22);
+  }
+  .log-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(34,197,94,0.3);
+  }
+  .log-btn:active { transform: translateY(0); }
+
+  /* ─── ANALYTICS TABLE ─────────────────────────────────── */
+  .analytics-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 0.8rem;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .data-table th {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 0.7rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .data-table td {
+    padding: 0.95rem 1.2rem;
+    font-size: 0.88rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: rgba(240,244,240,0.82);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover td {
+    background: rgba(255,255,255,0.03);
+  }
+
+  /* ─── TAGS ────────────────────────────────────────────── */
+  .tag {
+    display: inline-block;
+    padding: 0.22rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(74,222,128,0.12);
+    color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.22);
+    letter-spacing: 0.04em;
+  }
+  .tag.blue   { background: rgba(56,189,248,0.12); color: #38bdf8; border-color: rgba(56,189,248,0.22); }
+  .tag.orange { background: rgba(251,146,60,0.12);  color: #fb923c; border-color: rgba(251,146,60,0.22); }
+  .tag.purple { background: rgba(167,139,250,0.12); color: #a78bfa; border-color: rgba(167,139,250,0.22); }
+
+  .bold { font-weight: 700; color: var(--text-primary); }
+  .empty-row td {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 2.2rem;
+  }
+
+  /* ─── DIVIDER ─────────────────────────────────────────── */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+    margin: 1.5rem 0;
+  }
+
+  /* ─── RESPONSIVE ──────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .metric-grid     { grid-template-columns: 1fr 1fr; }
+    .nav-buttons     { grid-template-columns: repeat(2, 1fr); }
+    .form-grid.cols-3 { grid-template-columns: 1fr; }
+    .form-grid.cols-2 { grid-template-columns: 1fr; }
+    .header h1       { font-size: 1.9rem; }
+    .branch-botanical-left  { width: 280px; left: -60px; }
+    .branch-botanical-right { width: 260px; right: -60px; }
+  }
+  .branch-top {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+  /* ─── ENTRANCE ANIMATION ──────────────────────────────── */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .page.active .header,
+  .page.active .month-label,
+  .page.active .metric-grid,
+  .page.active .nav-buttons,
+  .page.active .tracker-wrap {
+    animation: fadeSlideUp 0.5s ease both;
+  }
+  .page.active .metric-grid { animation-delay: 0.06s; }
+  .page.active .nav-buttons { animation-delay: 0.12s; }
+  .page.active .tracker-wrap { animation-delay: 0.05s; }
+
+  /* Stagger metric cards */
+  .page.active .metric-card:nth-child(1) { animation: fadeSlideUp 0.45s 0.08s ease both; }
+  .page.active .metric-card:nth-child(2) { animation: fadeSlideUp 0.45s 0.14s ease both; }
+  .page.active .metric-card:nth-child(3) { animation: fadeSlideUp 0.45s 0.20s ease both; }
+  .page.active .metric-card:nth-child(4) { animation: fadeSlideUp 0.45s 0.26s ease both; }
 </style>
 </head>
 <body>
-<div class="page">
+  <nav class="top-nav">
+  <div class="logo">Sustainability Tracker</div>
+
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="resource_usage.html">Resource</a>
+    <a href="waste.html">Waste</a>
+    <a href="reports.html">Reports</a>
+    <a href="login.html" class="logout">Logout</a>
+  </div>
+</nav>
+<div class="branch-layer"></div>
+
+<!-- Background layers -->
+<div class="noise-layer"></div>
+<div class="wave-shape wave-shape-1"></div>
+<div class="wave-shape wave-shape-2"></div>
+<div class="wave-shape wave-shape-3"></div>
+
+<!-- Botanical branch illustrations -->
+<div class="botanical-branch branch-botanical-left">
+  <svg viewBox="0 0 480 420" xmlns="http://www.w3.org/2000/svg" fill="none">
+    <!-- Main stem -->
+    <path d="M30 420 C80 340, 120 280, 160 210 C200 140, 230 100, 260 60" stroke="rgba(255,255,255,0.55)" stroke-width="1.8" stroke-linecap="round"/>
+    <!-- Secondary left stem -->
+    <path d="M160 210 C130 185, 90 170, 50 160" stroke="rgba(255,255,255,0.38)" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Secondary right stem -->
+    <path d="M200 155 C230 130, 260 125, 300 115" stroke="rgba(255,255,255,0.38)" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Tertiary branch -->
+    <path d="M230 100 C210 75, 200 50, 210 20" stroke="rgba(255,255,255,0.28)" stroke-width="1" stroke-linecap="round"/>
+    <!-- Leaves on main stem -->
+    <ellipse cx="170" cy="200" rx="22" ry="10" transform="rotate(-35 170 200)" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.30)" stroke-width="0.9"/>
+    <ellipse cx="215" cy="145" rx="20" ry="9"  transform="rotate(-55 215 145)" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.28)" stroke-width="0.9"/>
+    <ellipse cx="248" cy="88"  rx="18" ry="8"  transform="rotate(-70 248 88)"  fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.26)" stroke-width="0.9"/>
+    <!-- Leaves on left branch -->
+    <ellipse cx="100" cy="172" rx="18" ry="8"  transform="rotate(15 100 172)"  fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+    <ellipse cx="58"  cy="163" rx="15" ry="7"  transform="rotate(8 58 163)"    fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+    <!-- Leaves on right branch -->
+    <ellipse cx="260" cy="128" rx="19" ry="8"  transform="rotate(-20 260 128)" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+    <ellipse cx="298" cy="118" rx="16" ry="7"  transform="rotate(-12 298 118)" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+    <!-- Small tip leaves -->
+    <ellipse cx="210" cy="22"  rx="12" ry="5"  transform="rotate(-80 210 22)"  fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+    <ellipse cx="262" cy="55"  rx="13" ry="5"  transform="rotate(-65 262 55)"  fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+    <!-- Buds -->
+    <circle cx="262" cy="58"  r="3"   fill="rgba(255,255,255,0.22)"/>
+    <circle cx="303" cy="113" r="2.5" fill="rgba(255,255,255,0.18)"/>
+    <circle cx="213" cy="19"  r="2.5" fill="rgba(255,255,255,0.18)"/>
+    <!-- Leaf veins -->
+    <path d="M155 203 C163 200, 175 199, 183 197" stroke="rgba(255,255,255,0.14)" stroke-width="0.6"/>
+    <path d="M200 148 C208 145, 220 144, 228 142" stroke="rgba(255,255,255,0.12)" stroke-width="0.6"/>
+  </svg>
+</div>
+
+<div class="botanical-branch branch-botanical-right">
+  <svg viewBox="0 0 420 380" xmlns="http://www.w3.org/2000/svg" fill="none">
+    <!-- Main stem (mirrored via CSS scaleX) -->
+    <path d="M30 0 C70 60, 100 120, 140 190 C180 260, 210 300, 250 370" stroke="rgba(255,255,255,0.50)" stroke-width="1.8" stroke-linecap="round"/>
+    <!-- Secondary branches -->
+    <path d="M140 190 C110 210, 70 215, 30 225" stroke="rgba(255,255,255,0.34)" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M180 250 C215 240, 250 245, 290 240" stroke="rgba(255,255,255,0.30)" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M100 115 C80 95, 75 65, 90 40" stroke="rgba(255,255,255,0.24)" stroke-width="1" stroke-linecap="round"/>
+    <!-- Leaves -->
+    <ellipse cx="148" cy="182" rx="21" ry="9"  transform="rotate(40 148 182)"  fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.28)" stroke-width="0.9"/>
+    <ellipse cx="192" cy="240" rx="20" ry="9"  transform="rotate(55 192 240)"  fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.26)" stroke-width="0.9"/>
+    <ellipse cx="232" cy="305" rx="18" ry="8"  transform="rotate(65 232 305)"  fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.24)" stroke-width="0.9"/>
+    <ellipse cx="70"  cy="220" rx="17" ry="7"  transform="rotate(-10 70 220)"  fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+    <ellipse cx="32"  cy="228" rx="14" ry="6"  transform="rotate(-5 32 228)"   fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>
+    <ellipse cx="255" cy="243" rx="17" ry="7"  transform="rotate(15 255 243)"  fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+    <ellipse cx="290" cy="238" rx="14" ry="6"  transform="rotate(10 290 238)"  fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>
+    <ellipse cx="88"  cy="42"  rx="12" ry="5"  transform="rotate(75 88 42)"    fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+    <!-- Buds -->
+    <circle cx="293" cy="238" r="3"   fill="rgba(255,255,255,0.20)"/>
+    <circle cx="235" cy="302" r="2.5" fill="rgba(255,255,255,0.16)"/>
+    <circle cx="90"  cy="39"  r="2.5" fill="rgba(255,255,255,0.16)"/>
+  </svg>
+</div>
+
+<!-- ===== PAGE 1: DASHBOARD ===== -->
+<div class="page active" id="page-dashboard">
   <div class="header">
     <h1>Sustainability Tracker</h1>
-    <p>Resource Management</p>
+    <p>Dashboard</p>
   </div>
+
+  <div class="month-label">March 2026 — Current Month Overview</div>
+
   <div class="metric-grid">
-    <div class="metric-card" onclick="window.location.href='reports.html'">
+    <div class="metric-card elec" onclick="showPage('page-electricity')">
       <span class="metric-icon">⚡</span>
-      <div class="metric-label">Total Electricity</div>
+      <div class="metric-nav">View →</div>
+      <div class="metric-label">Total Electricity Usage</div>
       <div class="metric-value" id="dash-elec">0<span class="metric-unit">kWh</span></div>
+      <div class="metric-sub">Click to log & track</div>
     </div>
-    <div class="metric-card" onclick="window.location.href='reports.html'">
+
+    <div class="metric-card water" onclick="showPage('page-water')">
       <span class="metric-icon">💧</span>
-      <div class="metric-label">Total Water</div>
+      <div class="metric-nav">View →</div>
+      <div class="metric-label">Total Water Consumption</div>
       <div class="metric-value" id="dash-water">0<span class="metric-unit">L</span></div>
+      <div class="metric-sub">Click to log & track</div>
     </div>
-    <div class="metric-card" onclick="window.location.href='reports.html'">
+
+    <div class="metric-card waste" onclick="showPage('page-waste')">
       <span class="metric-icon">🗑️</span>
-      <div class="metric-label">Total Waste</div>
+      <div class="metric-nav">View →</div>
+      <div class="metric-label">Total Waste Generated</div>
       <div class="metric-value" id="dash-waste">0<span class="metric-unit">kg</span></div>
+      <div class="metric-sub">Click to log & track</div>
     </div>
-    <div class="metric-card" onclick="window.location.href='reports.html'">
+
+    <div class="metric-card carbon" onclick="showPage('page-carbon')">
       <span class="metric-icon">🌿</span>
-      <div class="metric-label">Carbon Footprint</div>
-      <div class="metric-value" id="dash-carbon">0.00<span class="metric-unit">MT</span></div>
+      <div class="metric-nav">View →</div>
+      <div class="metric-label">Total Carbon Footprint</div>
+      <div class="metric-value" id="dash-carbon">0<span class="metric-unit">kg CO₂</span></div>
+      <div class="metric-sub">Click to log & track</div>
     </div>
   </div>
+
   <div class="nav-buttons">
-    <button class="nav-btn" onclick="window.location.href='resource_usage.html'">📊 Resource Log</button>
-    <button class="nav-btn" onclick="window.location.href='green_campus.html'">🌱 Waste Log</button>
-    <button class="nav-btn" onclick="logout()" style="background: #ef4444; border-color: #dc2626;">🚪 Logout</button>
-    <button class="nav-btn" onclick="window.location.href='reports.html'">📈 Reports</button>
+    <button class="nav-btn" onclick="showPage('page-electricity')">
+      <span class="nb-icon">⚡</span> Electricity
+    </button>
+    <button class="nav-btn" onclick="showPage('page-water')">
+      <span class="nb-icon">💧</span> Water
+    </button>
+    <button class="nav-btn" onclick="showPage('page-waste')">
+      <span class="nb-icon">🗑️</span> Waste
+    </button>
+    <button class="nav-btn" onclick="showPage('page-carbon')">
+      <span class="nb-icon">🌿</span> Carbon
+    </button>
+  </div>
+</div>
+
+<!-- ===== PAGE 2: ELECTRICITY ===== -->
+<div class="page" id="page-electricity">
+  <div class="header">
+    <h1>Sustainability Tracker</h1>
+    <p>Electricity Usage</p>
+  </div>
+  <div class="tracker-wrap">
+    <button class="back-btn" onclick="showPage('page-dashboard')">← Back to Dashboard</button>
+
+    <div class="glass form-card">
+      <div class="form-grid cols-3">
+        <div class="field">
+          <label>Source</label>
+          <select id="elec-source">
+            <option>Grid / Mains</option>
+            <option>Solar</option>
+            <option>Generator</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Units (kWh)</label>
+          <input type="number" id="elec-units" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label>Timestamp</label>
+          <input type="date" id="elec-date">
+        </div>
+      </div>
+      <br>
+      <button class="log-btn" onclick="logData('electricity')">Log Data</button>
+    </div>
+
+    <div class="analytics-title">Verified Analytics Feed</div>
+    <div class="glass" style="padding:0.5rem 0;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Source</th>
+            <th>Units (kWh)</th>
+          </tr>
+        </thead>
+        <tbody id="elec-table">
+          <tr class="empty-row"><td colspan="3">No data logged yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE 3: WATER ===== -->
+<div class="page" id="page-water">
+  <div class="header">
+    <h1>Sustainability Tracker</h1>
+    <p>Water Consumption</p>
+  </div>
+  <div class="tracker-wrap">
+    <button class="back-btn" onclick="showPage('page-dashboard')">← Back to Dashboard</button>
+
+    <div class="glass form-card">
+      <div class="form-grid cols-3">
+        <div class="field">
+          <label>Usage Type</label>
+          <select id="water-type">
+            <option>Domestic</option>
+            <option>Irrigation</option>
+            <option>Industrial</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Volume (Litres)</label>
+          <input type="number" id="water-vol" placeholder="0.00" step="0.1" min="0">
+        </div>
+        <div class="field">
+          <label>Timestamp</label>
+          <input type="date" id="water-date">
+        </div>
+      </div>
+      <br>
+      <button class="log-btn" onclick="logData('water')">Log Data</button>
+    </div>
+
+    <div class="analytics-title">Verified Analytics Feed</div>
+    <div class="glass" style="padding:0.5rem 0;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Volume (L)</th>
+          </tr>
+        </thead>
+        <tbody id="water-table">
+          <tr class="empty-row"><td colspan="3">No data logged yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE 4: WASTE ===== -->
+<div class="page" id="page-waste">
+  <div class="header">
+    <h1>Sustainability Tracker</h1>
+    <p>Waste Generated</p>
+  </div>
+  <div class="tracker-wrap">
+    <button class="back-btn" onclick="showPage('page-dashboard')">← Back to Dashboard</button>
+
+    <div class="glass form-card">
+      <div class="form-grid cols-3">
+        <div class="field">
+          <label>Classification</label>
+          <select id="waste-type">
+            <option>Wet / Organic</option>
+            <option>Dry / Recyclable</option>
+            <option>Hazardous</option>
+            <option>E-Waste</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Weight (kg)</label>
+          <input type="number" id="waste-weight" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label>Timestamp</label>
+          <input type="date" id="waste-date">
+        </div>
+      </div>
+      <br>
+      <button class="log-btn" onclick="logData('waste')">Log Data</button>
+    </div>
+
+    <div class="analytics-title">Verified Analytics Feed</div>
+    <div class="glass" style="padding:0.5rem 0;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Volume</th>
+          </tr>
+        </thead>
+        <tbody id="waste-table">
+          <tr class="empty-row"><td colspan="3">No data logged yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE 5: CARBON ===== -->
+<div class="page" id="page-carbon">
+  <div class="header">
+    <h1>Sustainability Tracker</h1>
+    <p>Carbon Footprint</p>
+  </div>
+  <div class="tracker-wrap">
+    <button class="back-btn" onclick="showPage('page-dashboard')">← Back to Dashboard</button>
+
+    <div class="glass form-card">
+      <div class="form-grid cols-3">
+        <div class="field">
+          <label>Activity</label>
+          <select id="carbon-activity">
+            <option>Transport</option>
+            <option>Flights</option>
+            <option>Energy Use</option>
+            <option>Food</option>
+            <option>Shopping</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>CO₂ (kg)</label>
+          <input type="number" id="carbon-val" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label>Timestamp</label>
+          <input type="date" id="carbon-date">
+        </div>
+      </div>
+      <br>
+      <button class="log-btn" onclick="logData('carbon')">Log Data</button>
+    </div>
+
+    <div class="analytics-title">Verified Analytics Feed</div>
+    <div class="glass" style="padding:0.5rem 0;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Activity</th>
+            <th>CO₂ (kg)</th>
+          </tr>
+        </thead>
+        <tbody id="carbon-table">
+          <tr class="empty-row"><td colspan="3">No data logged yet</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
 <script>
-  window.onload = async function() {
-    // Check if user is logged in
-    if (!localStorage.getItem('user')) {
-      window.location.href = 'index.html';
-      return;
-    }
-    // Fetch data from API
-    try {
-      const response = await fetch('/api/reports');
-      const data = await response.json();
-      
-      const elec = data.elec || 0;
-      const water = data.water || 0;
-      const waste = data.waste || 0;
-      
-      document.getElementById('dash-elec').innerHTML = elec + '<span class="metric-unit">kWh</span>';
-      document.getElementById('dash-water').innerHTML = water + '<span class="metric-unit">L</span>';
-      document.getElementById('dash-waste').innerHTML = waste + '<span class="metric-unit">kg</span>';
-      const carbon = ((elec * 0.0007) + (water * 0.0005) + (waste * 0.0006)).toFixed(2);
-      document.getElementById('dash-carbon').innerHTML = carbon + '<span class="metric-unit">MT</span>';
-    } catch (err) {
-      console.error('Error loading reports:', err);
-    }
-  };
+  const data = { electricity: [], water: [], waste: [], carbon: [] };
 
-  function logout() {
-    localStorage.removeItem('user');
-    window.location.href = 'index.html';
+  const today = new Date().toISOString().split('T')[0];
+  ['elec-date','water-date','waste-date','carbon-date'].forEach(id => {
+    document.getElementById(id).value = today;
+  });
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
   }
+
+  function tagClass(type) {
+    const t = type.toLowerCase();
+    if (t.includes('wet') || t.includes('org') || t.includes('domestic') || t.includes('grid') || t.includes('transport')) return '';
+    if (t.includes('dry') || t.includes('solar') || t.includes('irrigat') || t.includes('flight')) return 'blue';
+    if (t.includes('haz') || t.includes('indust') || t.includes('energy')) return 'orange';
+    return 'purple';
+  }
+
+  function logData(type) {
+    let entry, tableId, dashId, unit;
+
+    if (type === 'electricity') {
+      const val = parseFloat(document.getElementById('elec-units').value) || 0;
+      const src = document.getElementById('elec-source').value;
+      const dt  = document.getElementById('elec-date').value;
+      entry = { date: dt, label: src, value: val };
+      tableId = 'elec-table'; dashId = 'dash-elec'; unit = 'kWh';
+    } else if (type === 'water') {
+      const val = parseFloat(document.getElementById('water-vol').value) || 0;
+      const src = document.getElementById('water-type').value;
+      const dt  = document.getElementById('water-date').value;
+      entry = { date: dt, label: src, value: val };
+      tableId = 'water-table'; dashId = 'dash-water'; unit = 'L';
+    } else if (type === 'waste') {
+      const val = parseFloat(document.getElementById('waste-weight').value) || 0;
+      const src = document.getElementById('waste-type').value;
+      const dt  = document.getElementById('waste-date').value;
+      entry = { date: dt, label: src, value: val };
+      tableId = 'waste-table'; dashId = 'dash-waste'; unit = 'kg';
+    } else if (type === 'carbon') {
+      const val = parseFloat(document.getElementById('carbon-val').value) || 0;
+      const src = document.getElementById('carbon-activity').value;
+      const dt  = document.getElementById('carbon-date').value;
+      entry = { date: dt, label: src, value: val };
+      tableId = 'carbon-table'; dashId = 'dash-carbon'; unit = 'kg CO₂';
+    }
+
+    if (!entry.value) { alert('Please enter a value greater than 0.'); return; }
+
+    data[type].push(entry);
+
+    const tbody = document.getElementById(tableId);
+    const emptyRow = tbody.querySelector('.empty-row');
+    if (emptyRow) emptyRow.remove();
+
+    const tagCls = tagClass(entry.label);
+    const shortLabel = entry.label.length > 12 ? entry.label.split('/')[0].trim() : entry.label;
+    const tr = document.createElement('tr');
+    tr.style.animation = 'fadeSlideUp 0.3s ease both';
+    tr.innerHTML = `
+      <td>${entry.date}</td>
+      <td><span class="tag ${tagCls}">${shortLabel.toLowerCase()}</span></td>
+      <td class="bold">${entry.value} ${unit}</td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
+
+    const total = data[type].reduce((s, e) => s + e.value, 0);
+    const rounded = total % 1 === 0 ? total : total.toFixed(2);
+    document.getElementById(dashId).innerHTML = `${rounded}<span class="metric-unit">${unit}</span>`;
+
+    const inputIds = { electricity: 'elec-units', water: 'water-vol', waste: 'waste-weight', carbon: 'carbon-val' };
+    document.getElementById(inputIds[type]).value = '';
+  }
+</script>
+<script>
+document.addEventListener("mousemove", (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 20;
+  const y = (e.clientY / window.innerHeight - 0.5) * 20;
+  document.querySelector('.branch-layer').style.transform = `translate(${x}px, ${y}px)`;
+});
 </script>
 </body>
 </html>
