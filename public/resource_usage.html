@@ -695,62 +695,53 @@
 
 <script>
 
-function getData(){
-return JSON.parse(localStorage.getItem("resourceData"))||{
-electricity:[],water:[],waste:[]
-};
+function showMsg(message){
+  const m = document.getElementById("msg");
+  m.textContent = message || "Data saved successfully ✅";
+  m.style.display = "block";
+  setTimeout(() => { m.style.display = "none"; }, 2000);
 }
 
-function saveData(d){
-localStorage.setItem("resourceData",JSON.stringify(d));
+async function logResource(type, building, date, value){
+  if(!building || !date || !value || Number(value) <= 0){
+    showMsg("Please fill all fields with valid values.");
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/resources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type,
+        qty: Number(value),
+        date,
+        time: '00:00:00',
+        building
+      })
+    });
+    const result = await resp.json();
+    if(resp.ok && result.success){
+      showMsg('Data saved to database successfully ✅');
+    } else {
+      showMsg(result.error || result.message || 'Save failed');
+    }
+  } catch(err){
+    console.error('Save error', err);
+    showMsg('Server error saving data');
+  }
 }
 
-function showMsg(){
-let m=document.getElementById("msg");
-m.style.display="block";
-setTimeout(()=>{ m.style.display="none"; },2000);
-}
-
-/* ELECTRICITY */
 function addElec(){
-let d=getData();
-
-d.electricity.push({
-building: ebuilding.value,
-date: edate.value,
-units: eunits.value
-});
-
-saveData(d);
-showMsg();
+  logResource('electricity', ebuilding.value, edate.value, eunits.value);
 }
 
-/* WATER */
 function addWater(){
-let d=getData();
-
-d.water.push({
-building: wbuilding.value,
-date: wdate.value,
-litres: wlitres.value
-});
-
-saveData(d);
-showMsg();
+  logResource('water', wbuilding.value, wdate.value, wlitres.value);
 }
 
-/* WASTE */
 function addWaste(){
-let d=getData();
-
-d.waste.push({
-building: wabuilding.value,
-date: wadate.value,
-quantity: waqty.value
-});
-
-saveData(d);
-showMsg();
+  logResource('waste', wabuilding.value, wadate.value, waqty.value);
 }
 
 </script>

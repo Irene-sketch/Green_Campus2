@@ -118,11 +118,9 @@ app.get('/api/reports', async (req, res) => {
 
 app.get('/api/resource-list', async (req, res) => {
     try {
-        const sql = `SELECT id, res_type, quantity, building,
-                            NVL(entry_date, log_date) AS entry_date,
-                            NVL(entry_time, log_time) AS entry_time
+        const sql = `SELECT log_id as id, res_type, quantity, building, entry_date, entry_time
                      FROM resource_logs
-                     ORDER BY NVL(entry_date, log_date) DESC, NVL(entry_time, log_time) DESC`;
+                     ORDER BY entry_date DESC, entry_time DESC`;
         console.log('resource-list SQL:', sql);
         const result = await runQuery(sql, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
         res.json(result.rows || []);

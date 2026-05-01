@@ -685,7 +685,7 @@
     <a href="resource_usage.html">Resource</a>
     <a href="waste.html">Waste</a>
     <a href="reports.html">Reports</a>
-    <a href="login.html" class="logout">Logout</a>
+    <a href="#" onclick="logout()" class="logout">Logout</a>
   </div>
 </nav>
 <div class="branch-layer"></div>
@@ -1042,27 +1042,111 @@
     return 'purple';
   }
 
+  // Load data from database on page load
+  async function loadDashboardData() {
+    try {
+      const response = await fetch('/api/resource-list');
+      const resources = await response.json();
+      
+      // Reset data
+      data.electricity = [];
+      data.water = [];
+      data.waste = [];
+      
+      // Clear tables
+      ['elec-table', 'water-table', 'waste-table'].forEach(id => {
+        const tbody = document.getElementById(id);
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="3">No data logged yet</td></tr>';
+      });
+      
+      // Populate from API data
+      resources.forEach(r => {
+        let type, unit, label, tableId, dashId;
+        
+        if (r.RES_TYPE === 'electricity') {
+          type = 'electricity';
+          unit = 'kWh';
+          label = r.BUILDING || 'Main Block';
+          tableId = 'elec-table';
+          dashId = 'dash-elec';
+        } else if (r.RES_TYPE === 'water') {
+          type = 'water';
+          unit = 'L';
+          label = r.BUILDING || 'Main Block';
+          tableId = 'water-table';
+          dashId = 'dash-water';
+        } else if (r.RES_TYPE === 'waste') {
+          type = 'waste';
+          unit = 'kg';
+          label = r.BUILDING || 'Main Block';
+          tableId = 'waste-table';
+          dashId = 'dash-waste';
+        } else {
+          return;
+        }
+        
+        const entry = {
+          date: r.ENTRY_DATE ? new Date(r.ENTRY_DATE).toISOString().split('T')[0] : today,
+          label: label,
+          value: r.QUANTITY || 0
+        };
+        
+        data[type].push(entry);
+        
+        // Add to table
+        const tbody = document.getElementById(tableId);
+        const emptyRow = tbody.querySelector('.empty-row');
+        if (emptyRow) emptyRow.remove();
+        
+        const tagCls = tagClass(entry.label);
+        const shortLabel = entry.label.length > 12 ? entry.label.split('/')[0].trim() : entry.label;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${entry.date}</td>
+          <td><span class="tag ${tagCls}">${shortLabel.toLowerCase()}</span></td>
+          <td class="bold">${entry.value} ${unit}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      
+      // Update dashboard totals
+      ['electricity', 'water', 'waste'].forEach(type => {
+        const total = data[type].reduce((s, e) => s + e.value, 0);
+        const rounded = total % 1 === 0 ? total : total.toFixed(2);
+        const unit = type === 'electricity' ? 'kWh' : (type === 'water' ? 'L' : 'kg');
+        const dashId = 'dash-' + (type === 'electricity' ? 'elec' : (type === 'water' ? 'water' : 'waste'));
+        document.getElementById(dashId).innerHTML = `${rounded}<span class="metric-unit">${unit}</span>`;
+      });
+      
+    } catch (err) {
+      console.error('Error loading dashboard data:', err);
+    }
+  }
+
   function logData(type) {
-    let entry, tableId, dashId, unit;
+    let entry, tableId, dashId, unit, resourceType;
 
     if (type === 'electricity') {
       const val = parseFloat(document.getElementById('elec-units').value) || 0;
-      const src = document.getElementById('elec-source').value;
+      const building = document.getElementById('elec-source') ? document.getElementById('elec-source').value : 'Main Block';
       const dt  = document.getElementById('elec-date').value;
-      entry = { date: dt, label: src, value: val };
+      entry = { date: dt, label: building, value: val };
       tableId = 'elec-table'; dashId = 'dash-elec'; unit = 'kWh';
+      resourceType = 'electricity';
     } else if (type === 'water') {
       const val = parseFloat(document.getElementById('water-vol').value) || 0;
-      const src = document.getElementById('water-type').value;
+      const building = document.getElementById('water-type') ? document.getElementById('water-type').value : 'Main Block';
       const dt  = document.getElementById('water-date').value;
-      entry = { date: dt, label: src, value: val };
+      entry = { date: dt, label: building, value: val };
       tableId = 'water-table'; dashId = 'dash-water'; unit = 'L';
+      resourceType = 'water';
     } else if (type === 'waste') {
       const val = parseFloat(document.getElementById('waste-weight').value) || 0;
-      const src = document.getElementById('waste-type').value;
+      const building = document.getElementById('waste-type') ? document.getElementById('waste-type').value : 'Main Block';
       const dt  = document.getElementById('waste-date').value;
-      entry = { date: dt, label: src, value: val };
+      entry = { date: dt, label: building, value: val };
       tableId = 'waste-table'; dashId = 'dash-waste'; unit = 'kg';
+      resourceType = 'waste';
     } else if (type === 'carbon') {
       const val = parseFloat(document.getElementById('carbon-val').value) || 0;
       const src = document.getElementById('carbon-activity').value;
@@ -1073,29 +1157,102 @@
 
     if (!entry.value) { alert('Please enter a value greater than 0.'); return; }
 
-    data[type].push(entry);
+    // If it's a resource type, send to API
+    if (resourceType) {
+      const payload = {
+        type: resourceType,
+        qty: entry.value,
+        date: entry.date,
+        building: entry.label,
+        time: new Date().toTimeString().substring(0, 5)
+      };
+      
+      fetch('/api/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(apiData => {
+        if (apiData.success) {
+          // Update local display after API confirms
+          data[type].push(entry);
 
-    const tbody = document.getElementById(tableId);
-    const emptyRow = tbody.querySelector('.empty-row');
-    if (emptyRow) emptyRow.remove();
+          const tbody = document.getElementById(tableId);
+          const emptyRow = tbody.querySelector('.empty-row');
+          if (emptyRow) emptyRow.remove();
 
-    const tagCls = tagClass(entry.label);
-    const shortLabel = entry.label.length > 12 ? entry.label.split('/')[0].trim() : entry.label;
-    const tr = document.createElement('tr');
-    tr.style.animation = 'fadeSlideUp 0.3s ease both';
-    tr.innerHTML = `
-      <td>${entry.date}</td>
-      <td><span class="tag ${tagCls}">${shortLabel.toLowerCase()}</span></td>
-      <td class="bold">${entry.value} ${unit}</td>
-    `;
-    tbody.insertBefore(tr, tbody.firstChild);
+          const tagCls = tagClass(entry.label);
+          const shortLabel = entry.label.length > 12 ? entry.label.split('/')[0].trim() : entry.label;
+          const tr = document.createElement('tr');
+          tr.style.animation = 'fadeSlideUp 0.3s ease both';
+          tr.innerHTML = `
+            <td>${entry.date}</td>
+            <td><span class="tag ${tagCls}">${shortLabel.toLowerCase()}</span></td>
+            <td class="bold">${entry.value} ${unit}</td>
+          `;
+          tbody.insertBefore(tr, tbody.firstChild);
 
-    const total = data[type].reduce((s, e) => s + e.value, 0);
-    const rounded = total % 1 === 0 ? total : total.toFixed(2);
-    document.getElementById(dashId).innerHTML = `${rounded}<span class="metric-unit">${unit}</span>`;
+          const total = data[type].reduce((s, e) => s + e.value, 0);
+          const rounded = total % 1 === 0 ? total : total.toFixed(2);
+          document.getElementById(dashId).innerHTML = `${rounded}<span class="metric-unit">${unit}</span>`;
 
-    const inputIds = { electricity: 'elec-units', water: 'water-vol', waste: 'waste-weight', carbon: 'carbon-val' };
-    document.getElementById(inputIds[type]).value = '';
+          const inputIds = { electricity: 'elec-units', water: 'water-vol', waste: 'waste-weight' };
+          document.getElementById(inputIds[type]).value = '';
+          
+          alert('Data saved to database successfully!');
+        } else {
+          alert('Error saving data: ' + (apiData.error || 'Unknown error'));
+        }
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        alert('Error saving data to database: ' + err.message);
+      });
+      
+    } else {
+      // Carbon logging (for now, just local)
+      data[type].push(entry);
+
+      const tbody = document.getElementById(tableId);
+      const emptyRow = tbody.querySelector('.empty-row');
+      if (emptyRow) emptyRow.remove();
+
+      const tagCls = tagClass(entry.label);
+      const shortLabel = entry.label.length > 12 ? entry.label.split('/')[0].trim() : entry.label;
+      const tr = document.createElement('tr');
+      tr.style.animation = 'fadeSlideUp 0.3s ease both';
+      tr.innerHTML = `
+        <td>${entry.date}</td>
+        <td><span class="tag ${tagCls}">${shortLabel.toLowerCase()}</span></td>
+        <td class="bold">${entry.value} ${unit}</td>
+      `;
+      tbody.insertBefore(tr, tbody.firstChild);
+
+      const total = data[type].reduce((s, e) => s + e.value, 0);
+      const rounded = total % 1 === 0 ? total : total.toFixed(2);
+      document.getElementById(dashId).innerHTML = `${rounded}<span class="metric-unit">${unit}</span>`;
+
+      const inputIds = { electricity: 'elec-units', water: 'water-vol', waste: 'waste-weight', carbon: 'carbon-val' };
+      document.getElementById(inputIds[type]).value = '';
+    }
+  }
+  
+  // Load data when page loads
+  window.addEventListener('load', () => {
+    // Check if user is logged in
+    if (localStorage.getItem('loggedIn') !== 'true') {
+      window.location.href = 'login.html';
+      return;
+    }
+    loadDashboardData();
+  });
+
+  // Logout functionality
+  function logout() {
+    localStorage.removeItem('user');
+    localStorage.removeItem('loggedIn');
+    window.location.href = 'login.html';
   }
 </script>
 <script>

@@ -10,6 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sustainability Tracker | Resource usage</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     @keyframes floatBranches {
       0%   { transform: translateY(0px) translateX(0px) scale(1); }
@@ -593,6 +594,11 @@
     text-align:center;
 }
 
+.chart-card {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
 /* BUILDING */
 .building-card{
     max-width:650px;
@@ -752,7 +758,6 @@
   <div class="nav-links">
     <a href="dashboard.html">Dashboard</a>
     <a href="resource_usage.html">Resource</a>
-    <a href="waste.html">Waste</a>
     <a href="reports.html">Reports</a>
     <a href="login.html" class="logout">Logout</a>
   </div>
@@ -785,11 +790,6 @@
     </div>
 </div>
 
-<div class="card building-card">
-    <h3>🏫 Building-wise Resource Usage</h3>
-    <div id="buildingReport"></div>
-</div>
-
 <div class="feedback-card">
     <h2>Sustainability Feedback</h2>
     <p id="result">Click Generate Report</p>
@@ -803,95 +803,188 @@
     </div>
 </div>
 
+<div class="card chart-card">
+    <h3>📊 Resource Usage Breakdown</h3>
+    <canvas id="resourceChart" width="400" height="200"></canvas>
+</div>
+
+<div class="card chart-card">
+    <h3>🏫 Building-wise Usage</h3>
+    <canvas id="buildingChart" width="400" height="200"></canvas>
+</div>
+    <h3>🏫 Building-wise Resource Usage</h3>
+    <div id="buildingReport"></div>
+</div>
+
 </div>
 
 <script>
 
-function show(){
-let d=JSON.parse(localStorage.getItem("resourceData"))||{
-electricity:[],water:[],waste:[]
-};
+async function show(){
+  try {
+    // Fetch data from server API
+    const response = await fetch('/api/reports');
+    const data = await response.json();
+    
+    // Get detailed resource list for building-wise breakdown
+    const listResponse = await fetch('/api/resource-list');
+    const resources = await listResponse.json();
+    
+    const totalE = data.elec || 0;
+    const totalW = data.water || 0;
+    const totalWa = data.waste || 0;
+    let buildings = {};
 
-let totalE=0,totalW=0,totalWa=0;
-let buildings={};
+    // Group resources by building
+    resources.forEach(r => {
+      const b = r.BUILDING || "Unknown";
+      if(!buildings[b]) buildings[b] = {e:0, w:0, wa:0};
+      
+      if(r.RES_TYPE === 'electricity') buildings[b].e += Number(r.QUANTITY || 0);
+      else if(r.RES_TYPE === 'water') buildings[b].w += Number(r.QUANTITY || 0);
+      else if(r.RES_TYPE === 'waste') buildings[b].wa += Number(r.QUANTITY || 0);
+    });
 
-d.electricity.forEach(e=>{
-let b=e.building||"Unknown";
-totalE+=Number(e.units||0);
-if(!buildings[b]) buildings[b]={e:0,w:0,wa:0};
-buildings[b].e+=Number(e.units||0);
-});
+    document.getElementById('elecTotal').textContent = totalE + " kWh";
+    document.getElementById('waterTotal').textContent = totalW + " L";
+    document.getElementById('wasteTotal').textContent = totalWa + " kg";
 
-d.water.forEach(w=>{
-let b=w.building||"Unknown";
-totalW+=Number(w.litres||0);
-if(!buildings[b]) buildings[b]={e:0,w:0,wa:0};
-buildings[b].w+=Number(w.litres||0);
-});
+    // Render resource usage pie chart
+    const ctx = document.getElementById('resourceChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Electricity (kWh)', 'Water (L)', 'Waste (kg)'],
+        datasets: [{
+          data: [totalE, totalW, totalWa],
+          backgroundColor: ['#4ade80', '#22c55e', '#16a34a'],
+          borderColor: ['#f0f4f0', '#f0f4f0', '#f0f4f0'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#f0f4f0'
+            }
+          }
+        }
+      }
+    });
 
-d.waste.forEach(w=>{
-let b=w.building||"Unknown";
-totalWa+=Number(w.quantity||0);
-if(!buildings[b]) buildings[b]={e:0,w:0,wa:0};
-buildings[b].wa+=Number(w.quantity||0);
-});
+    let html = "";
+    for(let b in buildings){
+      html += `
+      <div class="building-item">
+      <strong>${b}</strong><br>
+      ⚡ ${buildings[b].e} | 💧 ${buildings[b].w} | ♻ ${buildings[b].wa}
+      </div>`;
+    }
+    document.getElementById('buildingReport').innerHTML = html;
 
-elecTotal.textContent=totalE+" kWh";
-waterTotal.textContent=totalW+" L";
-wasteTotal.textContent=totalWa+" kg";
+    // Render building-wise bar chart
+    const buildingLabels = Object.keys(buildings);
+    const buildingData = buildingLabels.map(b => buildings[b].e + buildings[b].w + buildings[b].wa);
+    const buildingCtx = document.getElementById('buildingChart').getContext('2d');
+    new Chart(buildingCtx, {
+      type: 'bar',
+      data: {
+        labels: buildingLabels,
+        datasets: [{
+          label: 'Total Usage',
+          data: buildingData,
+          backgroundColor: '#4ade80',
+          borderColor: '#f0f4f0',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#f0f4f0'
+            },
+            grid: {
+              color: 'rgba(240,244,240,0.1)'
+            }
+          },
+          x: {
+            ticks: {
+              color: '#f0f4f0'
+            },
+            grid: {
+              color: 'rgba(240,244,240,0.1)'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#f0f4f0'
+            }
+          }
+        }
+      }
+    });
 
-let html="";
-for(let b in buildings){
-html+=`
-<div class="building-item">
-<strong>${b}</strong><br>
-⚡ ${buildings[b].e} | 💧 ${buildings[b].w} | ♻ ${buildings[b].wa}
-</div>`;
+    let msg = "";
+    if(totalE < 100) msg = "🌿 Excellent sustainability!";
+    else if(totalE < 300) msg = "⚡ Moderate usage";
+    else msg = "🚨 High consumption";
+
+    document.getElementById('result').textContent = msg;
+  } catch(err) {
+    console.error('Error fetching reports:', err);
+    document.getElementById('result').textContent = "Error loading data";
+  }
 }
-buildingReport.innerHTML=html;
 
-let msg="";
-if(totalE<100) msg="🌿 Excellent sustainability!";
-else if(totalE<300) msg="⚡ Moderate usage";
-else msg="🚨 High consumption";
+async function carbon(){
+  try {
+    const response = await fetch('/api/reports');
+    const data = await response.json();
+    
+    const totalE = data.elec || 0;
+    const carbon = totalE * 0.82;
 
-result.textContent=msg;
-}
+    document.getElementById('carbonResult').textContent = "🌍 " + carbon.toFixed(2) + " kg CO₂";
 
-function carbon(){
-let d=JSON.parse(localStorage.getItem("resourceData"))||{
-electricity:[],water:[],waste:[]
-};
-
-let totalE=0;
-d.electricity.forEach(e=> totalE+=Number(e.units||0));
-
-let carbon=totalE*0.82;
-
-carbonResult.textContent="🌍 "+carbon.toFixed(2)+" kg CO₂";
-
-let percent=Math.min(carbon/5,100);
-meterFill.style.width=percent+"%";
+    const percent = Math.min(carbon / 5, 100);
+    document.getElementById('meterFill').style.width = percent + "%";
+  } catch(err) {
+    console.error('Error calculating carbon:', err);
+    document.getElementById('carbonResult').textContent = "Error calculating";
+  }
 }
 
 function downloadReport(){
-let content = `
+  let content = `
 SUSTAINABILITY REPORT
 
-Electricity: ${elecTotal.textContent}
-Water: ${waterTotal.textContent}
-Waste: ${wasteTotal.textContent}
+Electricity: ${document.getElementById('elecTotal').textContent}
+Water: ${document.getElementById('waterTotal').textContent}
+Waste: ${document.getElementById('wasteTotal').textContent}
 
-Carbon: ${carbonResult.textContent}
+Carbon: ${document.getElementById('carbonResult').textContent}
 `;
 
-let blob = new Blob([content], {type:"text/plain"});
-let a = document.createElement("a");
+  let blob = new Blob([content], {type:"text/plain"});
+  let a = document.createElement("a");
 
-a.href = URL.createObjectURL(blob);
-a.download = "report.txt";
-a.click();
+  a.href = URL.createObjectURL(blob);
+  a.download = "report.txt";
+  a.click();
 }
+
+// Load data when page loads
+window.addEventListener('load', () => {
+  show();
+  carbon();
+});
 
 </script>
 
